@@ -1,0 +1,18 @@
+[package]
+name = "dot_save"
+version = "0.1.0"
+authors = ["Iudà <86917292+IUDA194@users.noreply.github.com>"]
+edition = "2021"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+slint = "1.6"
+rfd = "0.14.1"
+openssl = "0.10.64"
+pem = "3.0.4"
+base64 = "0.22.1"
+
+[build-dependencies]
+slint-build = "1.6"
