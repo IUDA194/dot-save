@@ -1,0 +1,74 @@
+import { Button, VerticalBox, LineEdit } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    in property <string> encrypted_hash: "";
+    in property <string> path: "Choose some path to result file";
+
+    callback code-text(string, string, string, string);
+    callback choose-folder();
+
+    GridLayout {
+    padding: 10px;
+    spacing: 20px;
+        Row {
+             public_key_input := LineEdit {
+                width: 50%;
+                placeholder-text: "Enter Public Key";
+                font-size: 14px;
+             }
+             Button {
+                text: "Paste";
+                clicked => {
+                    public_key_input.paste()
+                    }
+             }
+        }
+        Row {
+            h1-text := Text {
+                font-size: 48px;
+                text: ".save";
+                horizontal-alignment: center;
+            }
+        }
+        Row {
+            input := LineEdit {
+                height: 200px;
+                width: 400px;
+                placeholder-text: "Enter somesing for coding!";
+                font-size: 14px;
+            }
+            VerticalLayout {
+                Button {
+                    text: "▶️";
+                    primary: true;
+                    clicked => {code-text(public_key_input.text, input.text, root.path, file_name_input.text); h1-text.text = "The file was successfully saved! ✅"}
+                }
+                Button {
+                    height: 20%;
+                    text: "Paste";
+                    clicked => {
+                        input.paste()
+                        }
+                }
+            }
+        }
+        Row {
+            Text {
+                width: 400px;
+                text: root.path;
+            }
+            Button {
+                text: "Enter Folder";
+                clicked => {
+                        choose-folder();
+                }
+            }
+        }
+        Row {
+            file_name_input := LineEdit {
+                placeholder-text: "Enter file name!";
+                font-size: 14px;
+            }
+        }
+    }
+}
