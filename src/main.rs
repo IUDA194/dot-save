@@ -1,90 +1,86 @@
+#[macro_use]
+extern crate lazy_static;
+use std::sync::RwLock;
+
 mod ssh_key;
+mod utils;
 
-use std::string::ToString;
 use slint::SharedString;
-
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
-
 slint::include_modules!();
 
-const PRIVATE_KEY: &str = "-----BEGIN RSA PRIVATE KEY-----
-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
------END RSA PRIVATE KEY-----
-";
+use std::fs::File;
+use std::io::{Read, Write};
+use std::string::ToString;
+use std::path::Path;
 
-fn choose_folder_func() -> String {
-    // use std::path::PathBuf;
-    use rfd::FileDialog;
+use hex::decode;
 
-    let path = FileDialog::new().pick_folder();
-    match path {
-        Some(path_buf) => path_buf.display().to_string(),
-        None => "Pls enter folder to save .pass file".to_string(),
+lazy_static! {
+    static ref KEYS: RwLock<[String; 2]> = RwLock::new(["".to_string(), "".to_string()]);
+}
+
+fn find_keys_arr(disk_info: &utils::DiskInfo) -> [String; 2] {
+    let private_key_path = disk_info.mount_point.join("private.key");
+    let public_key_path = disk_info.mount_point.join("public.key");
+
+    let private_key = utils::read_key(&private_key_path);
+    let public_key = utils::read_key(&public_key_path);
+
+    if private_key.is_none() {
+        return ["".to_string(), "".to_string()];
     }
+
+    let iv = [31, 86, 4, 87, 123, 136, 58, 187, 11, 182, 22, 25, 218, 1, 52, 141];
+    let decrypted_private_key = disk_info.decrypt(&private_key.unwrap(), &iv);
+    let private_key_str = String::from_utf8(decrypted_private_key).unwrap();
+
+    println!("{:?}", private_key_str);
+
+    let keys = [private_key_str, public_key.unwrap()];
+    return keys;
 }
 
 
+fn find_keys_disk() -> [String; 2] {
+    let disks: Vec<utils::DiskInfo> = utils::find_disks();
+    let mut keys: [String; 2] = ["".to_string(), "".to_string()];
+    for disk in disks {
+        keys = find_keys_arr(&disk);
+        if keys != ["".to_string(), "".to_string()] {
+            break;
+        }
+    }
+    return keys;
+}
+
 fn main() -> Result<(), slint::PlatformError> {
+    println!("{:?}", utils::find_disks());
+
+    let disk_info = utils::find_disks();
+
+    let data = b"Hi bro, wts?";
+    let iv = [0u8; 16]; // In a real-world scenario, IV should be random and unique per encryption
+
+    let encrypted_data = disk_info[0].encrypt(data, &iv);
+    println!("Encrypted data: {:?}", encrypted_data);
+
+    let decrypted_data = disk_info[0].decrypt(&encrypted_data, &iv);
+    println!("Decrypted data: {:?}", String::from_utf8(decrypted_data).unwrap());
+
+    {
+        let mut keys = KEYS.write().unwrap();
+        *keys = find_keys_disk();
+    }
+
     let ui = AppWindow::new()?;
 
-    //ssh_key::generate_key_pair();
-
-    //let inp_text = "Hi bro!".to_string();
-    let encryptet_data = "SL4Mmv2boEc4TmYQW29Y8z6xOml3hkAgtRmsIEVHYbcuixPR8fq1gEes7hMguYnRQBL4p2wxptkm6OpJm/bMFdBQeXcv4zmzEaLsix3+BppIGmlW43ILQ+/139RroiwXsNKzZM6rCjOyoTF6Py7u0sc42UtBkgis6XvI0MPsX1Lxh7ywctjFs0Yr5SgYiTZea46zHgU7dqfTe7ofNPn8b940tKvZcc5EhGWqHhOx3UMW+GFKoRLA1L+xmJk7H6kTBvu2jCN1hpyNBc4PnTb1YN3sctcquwLdqUiFTzAlfTQYhyH2GROQyhyh1wXdcgGQUAgzfkUk9XGFbLwov2fnBAA0h9hRnaxLoV/xuOlZAd90bypxCamCYrfNsq4Lnqtu/6ElKRgUb/Px7Tjv9cCfLWR5qPX6NHuoF/V7rHfKWxLjhW95TLYZfUbHWZMh/RD58R93BmEU4XUT+Q9zmRVxZ2YM2WiNnXu7hb4kOnXi+mURcSc6nmZ/oFJepmpwsccygKmIlaSpT4OTUT++jwRGwS4LCBVBL9XdiJM7lY9j0f2sZlWTnfsf8uhi/zA7GtvPfc60fT0Adrjjc3Zd2rWdz48gXoR1Do5LSt+fhdnqD4V2FeKO1aspiJzuWA8GKCdJsnsX/OjtjUav091oUTFL/rKfq2QHpe97M5meAa3xboY=";
-    //println!("{}", encryptet_data);
-    let decrypted_data = ssh_key::decrypt_with_private_key(&PRIVATE_KEY, &encryptet_data);
-    println!("{}", decrypted_data);
-
+    {
+        let keys = KEYS.read().unwrap();
+        if *keys != ["".to_string(), "".to_string()] {
+            ui.set_decode_bottons_active(true);
+            ui.set_public_key_disk("Private key was found".into());
+        }
+    }
 
     ui.on_code_text({
         let ui_handle = ui.as_weak();
@@ -92,8 +88,6 @@ fn main() -> Result<(), slint::PlatformError> {
             let ui: AppWindow = ui_handle.unwrap();
 
             let encryptet_data = ssh_key::encrypt_with_public_key(&public_key.to_string(), &string);
-
-            println!("{}", encryptet_data);
 
             let directory_str: String = directory.to_string();
             let file_name_str: String = file_name.to_string();
@@ -109,7 +103,37 @@ fn main() -> Result<(), slint::PlatformError> {
                 Ok(_) => println!("successfully wrote to {}", path.display()),
             }
 
-            ui.set_encrypted_hash(encryptet_data.into())
+            ui.set_encrypted_hash(encryptet_data.into());
+        }
+    });
+
+    ui.on_decode_file({
+        let ui_handle = ui.as_weak();
+        move |coded_file: SharedString| {
+            let ui: AppWindow = ui_handle.unwrap();
+
+            let private_key = {
+                let keys = KEYS.read().unwrap();
+                keys[0].clone()
+            };
+
+            let mut file = match File::open(&*coded_file) {
+                Err(why) => panic!("couldn't create {}", why),
+                Ok(file) => file,
+            };
+
+            let mut coded_text = String::new();
+            let _ = file.read_to_string(&mut coded_text);
+
+            println!("Coded text is: {}", coded_text);
+
+            let decoded_text = ssh_key::decrypt_with_private_key(&private_key, &coded_text);
+
+            if decoded_text == "" {
+                ui.set_decoded_text("Something going wrong!".into());
+            } else {
+                ui.set_decoded_text(decoded_text.into());
+            }
         }
     });
 
@@ -117,8 +141,82 @@ fn main() -> Result<(), slint::PlatformError> {
         let ui_handle = ui.as_weak();
         move || {
             let ui: AppWindow = ui_handle.unwrap();
-            let path = choose_folder_func();
+            let path = utils::choose_folder_func();
             ui.set_path(path.into());
+        }
+    });
+
+    ui.on_get_public_key({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui: AppWindow = ui_handle.unwrap();
+            let public_key = {
+                let keys = KEYS.read().unwrap();
+                keys[1].clone()
+            };
+            ui.set_public_key(public_key.into());
+        }
+    });
+
+    ui.on_generate_disk({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui: AppWindow = ui_handle.unwrap();
+            let path = utils::choose_folder_func();
+            let disk_info = utils::get_disk_info_for_folder(&path);
+            match disk_info {
+                Ok(disk_info) => {
+                    ssh_key::generate_key_pair(&disk_info);
+                    {
+                        let mut keys = KEYS.write().unwrap();
+                        *keys = find_keys_disk();
+                        if *keys != ["".to_string(), "".to_string()] {
+                            ui.set_decode_bottons_active(true);
+                            ui.set_public_key_disk("Private key was found".into());
+                        }
+                    }
+                },
+                Err(err) => {
+                    println!("Error: {}", err);
+                    ui.set_decode_bottons_active(false);
+                    ui.set_public_key_disk(err.into());
+                }
+            }
+
+        }
+    });
+
+    ui.on_find_disk({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui: AppWindow = ui_handle.unwrap();
+            {
+                let mut keys = KEYS.write().unwrap();
+                *keys = find_keys_disk();
+                print!("{:?}", keys);
+                if *keys != ["".to_string(), "".to_string()] {
+                    ui.set_decode_bottons_active(true);
+                    ui.set_public_key_disk("Private key was found".into());
+                }
+            }
+        }
+    });
+
+    ui.on_choose_private_key({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui: AppWindow = ui_handle.unwrap();
+            let path = utils::choose_file_func();
+            ui.set_private_key_path(path.into());
+        }
+    });
+
+    ui.on_choose_coded_file({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui: AppWindow = ui_handle.unwrap();
+            let path = utils::choose_file_func();
+            ui.set_coded_file(path.into());
         }
     });
 

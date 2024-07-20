@@ -1,73 +1,192 @@
-import { Button, VerticalBox, LineEdit } from "std-widgets.slint";
+import {TabWidget, Button, VerticalBox, TextEdit, TextEdit } from "std-widgets.slint";
+import { Theme } from "theme.slint";
 
 export component AppWindow inherits Window {
+    title: ".save";
+    preferred-width: 650px;
+    preferred-height: 500px;
+    min-width: 500px;
+    min-height: 300px;
+
     in property <string> encrypted_hash: "";
-    in property <string> path: "Choose some path to result file";
+    in property <string> path: "Choose some path to result file ->";
+    in property <string> private_key_path: "Choose private key file path ->";
+
+    in property <string> public_key_disk: "USB Disk not founded, you can`t decode files";
+    in property <bool> decode_bottons_active: false;
+    
+
+    in property <string> coded_file: "Choose decoded file ->";
+    in property <string> decoded_text;
+
+    in property <string> public_key;
+    in property <string> private_key;
+
+    callback generate-disk();
+    callback find-disk();
 
     callback code-text(string, string, string, string);
-    callback choose-folder();
+    callback decode-file(string);
 
-    GridLayout {
-    padding: 10px;
-    spacing: 20px;
-        Row {
-             public_key_input := LineEdit {
-                width: 50%;
-                placeholder-text: "Enter Public Key";
-                font-size: 14px;
-             }
-             Button {
-                text: "Paste";
-                clicked => {
-                    public_key_input.paste()
-                    }
-             }
-        }
-        Row {
-            h1-text := Text {
-                font-size: 48px;
-                text: ".save";
-                horizontal-alignment: center;
-            }
-        }
-        Row {
-            input := LineEdit {
-                height: 200px;
-                width: 400px;
-                placeholder-text: "Enter somesing for coding!";
-                font-size: 14px;
-            }
-            VerticalLayout {
-                Button {
-                    text: "▶️";
-                    primary: true;
-                    clicked => {code-text(public_key_input.text, input.text, root.path, file_name_input.text); h1-text.text = "The file was successfully saved! ✅"}
-                }
-                Button {
-                    height: 20%;
-                    text: "Paste";
-                    clicked => {
-                        input.paste()
+    callback choose-folder();
+    callback get-public-key();
+    callback choose-private-key();
+    callback choose-coded-file();
+
+    TabWidget {
+        Tab {
+            title: "Code";
+            GridLayout {
+                    padding: 10px;
+                    spacing: 20px;
+                    Row {
+                        VerticalLayout {
+                            Text {
+                                text: "Enter Public Key: ";
+                            }
+                            public_key_input := TextEdit {
+                                width: 50%;
+                                height: 90%;
+                                has-focus: false;
+                                font-size: 14px;
+                            }
                         }
+                         VerticalLayout {
+                             Button {
+                                text: "Paste";
+                                clicked => {
+                                    public_key_input.paste()
+                                    }
+                             }
+                             Button {
+                                text: "Use Own Public Key";
+                                clicked => {
+                                    get-public-key();
+                                    public_key_input.text = root.public_key;
+                                    }
+                             }
+                         }
+                    }
+                    Row {
+                        Text {
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            width: 400px;
+                            text: root.path;
+                        }
+                        Button {
+                            text: "Enter Folder";
+                            height: 30px;
+                            clicked => {
+                                    choose-folder();
+                            }
+                        }
+                    }
+                    Row {
+                        VerticalLayout {
+                            Text {
+                                text: "Enter the name of the encoded file:";
+                            }
+                            height: 300px;
+                            file_name_input := TextEdit {
+                                height: 15%;
+                                has-focus: false;
+                                //placeholder-text: "Enter file name!";
+                                font-size: 14px;
+                            }
+                            Text {
+                                text: "Enter a data for coding:";
+                            }
+                            input := TextEdit {
+                                height: 70%;
+                                width: 400px;
+                                has-focus: false;
+                                //placeholder-text: "Enter somesing for coding!";
+                                font-size: 14px;
+                            }
+                        }
+                        VerticalLayout {
+                            Button {
+                                text: "▶️";
+                                primary: true;
+                                clicked => {code-text(public_key_input.text, input.text, root.path, file_name_input.text);}
+                            }
+                            Button {
+                                height: 20%;
+                                text: "Paste";
+                                clicked => {
+                                    input.paste()
+                                    }
+                            }
+                        }
+                    }
                 }
-            }
         }
-        Row {
-            Text {
-                width: 400px;
-                text: root.path;
-            }
-            Button {
-                text: "Enter Folder";
-                clicked => {
-                        choose-folder();
+        Tab {
+            title: "Decode";
+            GridLayout {
+                padding: 10px;
+                spacing: 20px;
+                Row {
+                    Text {
+                        height: 10%;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        width: 400px;
+                        text: root.public_key_disk;
+                    }
+                    VerticalLayout {
+                        Button {
+                            height: 10%;
+                            text: "Ganarate new flash disk";
+                            clicked => {
+                                    generate-disk();
+                            }
+                        }
+                        Button {
+                            height: 10%;
+                            text: "Find flash";
+                            clicked => {
+                                    find-disk();
+                            }
+                        }
+                    }
                 }
-            }
-        }
-        Row {
-            file_name_input := LineEdit {
-                placeholder-text: "Enter file name!";
-                font-size: 14px;
+                Row {
+                    Text {
+                        height: 10%;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        width: 400px;
+                        text: root.coded_file;
+                    }
+                    Button {
+                        height: 10%;
+                        text: "Enter coded file";
+                        enabled: root.decode_bottons_active;
+                        clicked => {
+                                choose-coded-file();
+                        }
+                    }
+                }
+                Row {
+                    decode_result_text := TextEdit {
+                        height: 300px;
+                        text: decoded_text;
+                        font-size: 14px;
+                        width: 400px;
+                        has-focus: false;
+                        read-only: true;
+                    }
+                    Button {
+                        height: 10%;
+                        text: "Decode: " + coded_file;
+                        enabled: root.decode_bottons_active;
+                        clicked => {
+                                decode-file(coded_file);
+                        }
+                    }
+                }
             }
         }
     }
